@@ -1,75 +1,100 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, time
 
 import pandas as pd
 import streamlit as st
 from requests import RequestException
 from streamlit_folium import st_folium
 
-from sunny_places.app_state import get_default_view_state
-from sunny_places.demo_logic import build_fallback_places, format_data_error_message
+from sunny_places.app_state import DEFAULT_CENTER, DEFAULT_LOCALE
+from sunny_places.demo_logic import (
+    build_fallback_places,
+    compute_zoom_for_radius,
+    format_data_error_message,
+)
 from sunny_places.i18n import get_text
 from sunny_places.map_folium import build_folium_map
-from sunny_places.models import CandidatePlace, SamplePoint, WeatherSnapshot
+from sunny_places.models import CandidatePlace, SamplePoint
 from sunny_places.ranking import split_ranked_places
-from sunny_places.sampling import (
-    apply_terrain_metrics,
-    generate_sample_grid,
-    great_circle_distance_m,
-)
 from sunny_places.services import (
-    cached_fetch_elevations,
-    cached_fetch_nearby_places,
-    cached_fetch_weather_snapshot,
+    apply_active_layer_scores,
+    build_weather_context,
+    cached_compute_analysis_base,
+    cached_fetch_nearby_bars,
     cached_search_places,
 )
-from sunny_places.solar import calculate_sun_score
 from sunny_places.theme import build_streamlit_css
 from sunny_places.ui_state import (
     build_place_key,
+    determine_map_click_action,
     extract_clicked_coordinates,
     extract_selected_key_from_map_event,
+    find_clicked_sample_key,
     find_place_by_key,
-    find_sample_by_key,
+    is_sample_key,
 )
 
 
 def ensure_session_state() -> None:
-    defaults = get_default_view_state()
-    st.session_state.setdefault("locale", defaults.locale)
-    st.session_state.setdefault("theme", defaults.theme)
-    st.session_state.setdefault("center_latitude", defaults.center.latitude)
-    st.session_state.setdefault("center_longitude", defaults.center.longitude)
+    st.session_state.setdefault("locale", DEFAULT_LOCALE)
+    st.session_state.setdefault("center_latitude", DEFAULT_CENTER.latitude)
+    st.session_state.setdefault("center_longitude", DEFAULT_CENTER.longitude)
     st.session_state.setdefault("center_name", "Bilbao")
     st.session_state.setdefault("radius_m", 1200.0)
+    st.session_state.setdefault("pending_radius_m", 1200)
     st.session_state.setdefault("selected_place_key", None)
-    st.session_state.setdefault("map_center_latitude", defaults.center.latitude)
-    st.session_state.setdefault("map_center_longitude", defaults.center.longitude)
+    st.session_state.setdefault("layer_mode", "sun")
+    st.session_state.setdefault("show_bars", False)
+    st.session_state.setdefault("pending_precise_sample_key", None)
+    st.session_state.setdefault("map_center_latitude", DEFAULT_CENTER.latitude)
+    st.session_state.setdefault("map_center_longitude", DEFAULT_CENTER.longitude)
+    st.session_state["radius_m"] = max(float(st.session_state["radius_m"]), 100.0)
+    st.session_state["pending_radius_m"] = max(int(st.session_state["pending_radius_m"]), 100)
 
 
 def translate(key: str) -> str:
     return get_text(st.session_state.get("locale", "es"), key)
 
 
-def build_local_datetime(target_date: date, target_time: time, offset_seconds: int) -> datetime:
-    offset = timezone(timedelta(seconds=offset_seconds))
-    return datetime.combine(target_date, target_time, tzinfo=offset)
+def set_center(latitude: float, longitude: float, name: str) -> None:
+    st.session_state["center_latitude"] = latitude
+    st.session_state["center_longitude"] = longitude
+    st.session_state["center_name"] = name
+    st.session_state["map_center_latitude"] = latitude
+    st.session_state["map_center_longitude"] = longitude
+    st.session_state["pending_precise_sample_key"] = None
 
 
-def fallback_weather_snapshot() -> WeatherSnapshot:
-    return WeatherSnapshot(
-        cloud_cover=20.0,
-        shortwave_radiation=700.0,
-        direct_radiation=520.0,
-        diffuse_radiation=120.0,
-        direct_normal_irradiance=760.0,
-        timezone_name="UTC",
-        utc_offset_seconds=0,
-    )
+def build_custom_point_name(latitude: float, longitude: float) -> str:
+    return f"{translate('custom_point_name')} ({latitude:.5f}, {longitude:.5f})"
 
 
-def render_sidebar() -> tuple[str, date, time, float, bool]:
+def current_score_label() -> str:
+    if st.session_state.get("layer_mode") == "wind":
+        return translate("wind_score_label")
+    if st.session_state.get("layer_mode") == "comfort":
+        return translate("comfort_score_label")
+    return translate("score_label")
+
+
+def current_table_score_label() -> str:
+    if st.session_state.get("layer_mode") == "wind":
+        return translate("table_score_wind")
+    if st.session_state.get("layer_mode") == "comfort":
+        return translate("table_score_comfort")
+    return translate("table_score")
+
+
+def current_rank_title_keys() -> tuple[str, str]:
+    if st.session_state.get("layer_mode") == "wind":
+        return "most_windy", "least_windy"
+    if st.session_state.get("layer_mode") == "comfort":
+        return "most_comfortable", "least_comfortable"
+    return "most_sunny", "least_sunny"
+
+
+def render_sidebar() -> tuple[str, date, time, float, bool, bool, bool]:
     st.sidebar.markdown(f"### {translate('app_title')}")
     locale_label = st.sidebar.segmented_control(
         translate("language_label"),
@@ -78,25 +103,65 @@ def render_sidebar() -> tuple[str, date, time, float, bool]:
         default="ES" if st.session_state["locale"] == "es" else "EN",
     )
     st.session_state["locale"] = "es" if locale_label == "ES" else "en"
-
-    search_query = st.sidebar.text_input(
-        translate("search_label"),
-        value=st.session_state.get("center_name", "Bilbao"),
-        placeholder=translate("search_placeholder"),
+    layer_choice = st.sidebar.segmented_control(
+        translate("layer_label"),
+        options=[
+            translate("layer_sun"),
+            translate("layer_wind"),
+            translate("layer_comfort"),
+        ],
+        selection_mode="single",
+        default=(
+            translate("layer_wind")
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                translate("layer_comfort")
+                if st.session_state.get("layer_mode") == "comfort"
+                else translate("layer_sun")
+            )
+        ),
     )
-    search_clicked = st.sidebar.button(translate("search_button"), width="stretch")
+    if layer_choice == translate("layer_wind"):
+        st.session_state["layer_mode"] = "wind"
+    elif layer_choice == translate("layer_comfort"):
+        st.session_state["layer_mode"] = "comfort"
+    else:
+        st.session_state["layer_mode"] = "sun"
+    show_bars = st.sidebar.toggle(
+        translate("show_bars_label"),
+        value=bool(st.session_state.get("show_bars", False)),
+    )
+    st.session_state["show_bars"] = show_bars
+
+    with st.sidebar.form("search_form"):
+        search_query = st.text_input(
+            translate("search_label"),
+            value=st.session_state.get("center_name", "Bilbao"),
+            placeholder=translate("search_placeholder"),
+        )
+        search_clicked = st.form_submit_button(translate("search_button"), width="stretch")
     target_date = st.sidebar.date_input(translate("date_label"))
     target_time = st.sidebar.time_input(translate("time_label"), value=time(hour=16, minute=0))
     radius_m = float(
         st.sidebar.slider(
             translate("radius_label"),
-            min_value=400,
+            min_value=100,
             max_value=5000,
-            value=int(st.session_state["radius_m"]),
-            step=100,
+            value=int(st.session_state["pending_radius_m"]),
+            step=20,
+            key="pending_radius_m",
         )
     )
-    return search_query, target_date, target_time, radius_m, search_clicked
+    recalculate_clicked = st.sidebar.button(translate("recompute_button"), width="stretch")
+    return (
+        search_query,
+        target_date,
+        target_time,
+        radius_m,
+        search_clicked,
+        recalculate_clicked,
+        show_bars,
+    )
 
 
 def maybe_update_search_location(search_query: str, search_clicked: bool) -> None:
@@ -108,84 +173,9 @@ def maybe_update_search_location(search_query: str, search_clicked: bool) -> Non
         raise ValueError(translate("search_error"))
 
     top_result = results[0]
-    st.session_state["center_latitude"] = top_result.latitude
-    st.session_state["center_longitude"] = top_result.longitude
-    st.session_state["center_name"] = top_result.name
+    set_center(top_result.latitude, top_result.longitude, top_result.name)
     st.session_state["selected_place_key"] = None
-    st.session_state["map_center_latitude"] = top_result.latitude
-    st.session_state["map_center_longitude"] = top_result.longitude
-
-
-def enrich_samples_with_sun(
-    samples: list[SamplePoint],
-    target_datetime: datetime,
-    radius_m: float,
-    warnings: list[str],
-) -> tuple[list[SamplePoint], dict[str, float]]:
-    try:
-        elevations = cached_fetch_elevations(
-            tuple(sample.latitude for sample in samples),
-            tuple(sample.longitude for sample in samples),
-        )
-        for sample, elevation in zip(samples, elevations, strict=True):
-            sample.elevation_m = elevation
-        samples = apply_terrain_metrics(samples)
-    except RequestException:
-        warnings.append(translate("provider_warning"))
-
-    try:
-        weather = cached_fetch_weather_snapshot(
-            samples[0].latitude,
-            samples[0].longitude,
-            target_datetime,
-        )
-    except RequestException:
-        weather = fallback_weather_snapshot()
-        warnings.append(translate("provider_warning"))
-
-    localized_datetime = build_local_datetime(
-        target_datetime.date(),
-        target_datetime.time(),
-        weather.utc_offset_seconds,
-    )
-    for sample in samples:
-        sample.score = calculate_sun_score(
-            sample.latitude,
-            sample.longitude,
-            localized_datetime,
-            weather,
-            slope_deg=sample.slope_deg,
-            aspect_deg=sample.aspect_deg,
-        )
-
-    context = {
-        "cloud_cover": weather.cloud_cover,
-        "direct_radiation": weather.direct_radiation,
-        "diffuse_radiation": weather.diffuse_radiation,
-        "radius_m": radius_m,
-    }
-    return samples, context
-
-
-def score_places(
-    places: list[CandidatePlace],
-    samples: list[SamplePoint],
-) -> list[CandidatePlace]:
-    for place in places:
-        nearest_sample = min(
-            samples,
-            key=lambda sample: great_circle_distance_m(
-                place.latitude,
-                place.longitude,
-                sample.latitude,
-                sample.longitude,
-            ),
-        )
-        place.score = nearest_sample.score or 0.0
-        place.metadata["nearest_sample_latitude"] = nearest_sample.latitude
-        place.metadata["nearest_sample_longitude"] = nearest_sample.longitude
-        place.metadata["place_key"] = build_place_key(place)
-    return places
+    st.session_state["pending_precise_sample_key"] = None
 
 
 def render_places_table(
@@ -199,7 +189,7 @@ def render_places_table(
             {
                 translate("table_name"): place.name,
                 translate("table_category"): place.category,
-                translate("table_score"): round(place.score, 1),
+                current_table_score_label(): round(place.score, 1),
                 translate("table_distance"): round(place.distance_m or 0.0, 1),
             }
             for place in places
@@ -224,6 +214,7 @@ def render_places_table(
         st.session_state["selected_place_key"] = build_place_key(selected)
         st.session_state["map_center_latitude"] = selected.latitude
         st.session_state["map_center_longitude"] = selected.longitude
+        st.session_state["pending_precise_sample_key"] = None
         return selected
     return None
 
@@ -237,7 +228,7 @@ def render_selected_place_card(selected_place: CandidatePlace | None) -> None:
     <div class="sunny-card sunny-card-strong">
         <strong>{translate("selected_place")}</strong><br/>
         <div>{selected_place.name}</div>
-        <div class="sunny-kpi">{translate("score_label")}: {selected_place.score:.1f}</div>
+        <div class="sunny-kpi">{current_score_label()}: {selected_place.score:.1f}</div>
         <div class="sunny-kpi">{translate("table_category")}: {selected_place.category}</div>
         <div class="sunny-kpi">
             {translate("table_distance")}: {selected_place.distance_m or 0.0:.0f} m
@@ -251,27 +242,22 @@ def compute_demo_payload(
     target_date: date,
     target_time: time,
     radius_m: float,
+    layer_mode: str,
 ) -> tuple[list[SamplePoint], dict[str, float], list[CandidatePlace], list[str]]:
-    warnings: list[str] = []
     target_datetime = datetime.combine(target_date, target_time)
-    samples = generate_sample_grid(
+    analysis_base = cached_compute_analysis_base(
         st.session_state["center_latitude"],
         st.session_state["center_longitude"],
-        radius_m=radius_m,
-        grid_size=9,
+        target_datetime.isoformat(),
+        radius_m,
     )
-    samples, context = enrich_samples_with_sun(samples, target_datetime, radius_m, warnings)
-
-    try:
-        nearby_places = cached_fetch_nearby_places(
-            st.session_state["center_latitude"],
-            st.session_state["center_longitude"],
-            radius_m=radius_m,
-        )
-        scored_places = score_places(nearby_places, samples)
-    except RequestException:
-        scored_places = []
-        warnings.append(translate("provider_warning"))
+    samples, scored_places = apply_active_layer_scores(
+        analysis_base.samples,
+        analysis_base.places,
+        layer_mode,
+    )
+    context = build_weather_context(analysis_base.weather_snapshot, radius_m, layer_mode)
+    warnings = [translate(warning_key) for warning_key in analysis_base.warnings]
 
     if not scored_places:
         st.info(translate("no_places_found"))
@@ -282,61 +268,100 @@ def compute_demo_payload(
 def render_map(
     samples: list[SamplePoint],
     places: list[CandidatePlace],
+    bar_places: list[CandidatePlace],
     selected_key: str | None,
     weather_context: dict[str, float],
+    radius_m: float,
 ) -> CandidatePlace | None:
-    selected_place = find_place_by_key(places, selected_key)
-    selected_sample = find_sample_by_key(samples, selected_key)
-
     center_latitude = st.session_state["map_center_latitude"]
     center_longitude = st.session_state["map_center_longitude"]
-    if selected_place is not None:
-        center_latitude = selected_place.latitude
-        center_longitude = selected_place.longitude
-    elif selected_sample is not None:
-        center_latitude = selected_sample.latitude
-        center_longitude = selected_sample.longitude
+    selected_place = find_place_by_key(places, selected_key)
+    zoom_level = compute_zoom_for_radius(radius_m, latitude=center_latitude)
 
     folium_map = build_folium_map(
         center_latitude=center_latitude,
         center_longitude=center_longitude,
         samples=samples,
         places=places,
+        bar_places=bar_places,
         selected_key=selected_key,
         weather_context=weather_context,
         sample_label=translate("sample_point"),
-        score_label=translate("score_label"),
+        score_label=current_score_label(),
         coordinates_label=translate("coordinates_label"),
+        bars_label=translate("bars_label"),
         cloud_cover_label=translate("cloud_cover_label"),
+        shortwave_radiation_label=translate("shortwave_radiation_label"),
         direct_radiation_label=translate("direct_radiation_label"),
         diffuse_radiation_label=translate("diffuse_radiation_label"),
+        dni_label=translate("dni_label"),
+        wind_speed_label=translate("wind_speed_label"),
+        wind_gusts_label=translate("wind_gusts_label"),
+        wind_direction_label=translate("wind_direction_label"),
+        elevation_label=translate("elevation_label"),
+        slope_label=translate("slope_label"),
+        layer_mode=st.session_state.get("layer_mode", "sun"),
+        zoom_start=zoom_level,
     )
     event = st_folium(
         folium_map,
         key="sunny_places_map",
         width=None,
         height=560,
-        returned_objects=["last_object_clicked_popup", "last_clicked"],
+        zoom=zoom_level,
+        center=(center_latitude, center_longitude),
+        returned_objects=["last_object_clicked", "last_object_clicked_popup", "last_clicked"],
     )
 
-    clicked_coordinates = extract_clicked_coordinates(event if isinstance(event, dict) else None)
+    should_rerun = False
+    map_event = event if isinstance(event, dict) else None
+    clicked_coordinates = extract_clicked_coordinates(map_event)
+    map_selected_key = extract_selected_key_from_map_event(map_event)
+    inferred_sample_key = find_clicked_sample_key(samples, clicked_coordinates)
+    effective_clicked_key = map_selected_key or inferred_sample_key
+    click_action = determine_map_click_action(
+        effective_clicked_key,
+        st.session_state.get("pending_precise_sample_key"),
+    )
+
+    if click_action == "arm_sample" and effective_clicked_key:
+        st.session_state["selected_place_key"] = effective_clicked_key
+        st.session_state["pending_precise_sample_key"] = effective_clicked_key
+        should_rerun = True
+
     if clicked_coordinates is not None:
-        st.session_state["map_center_latitude"] = clicked_coordinates[0]
-        st.session_state["map_center_longitude"] = clicked_coordinates[1]
+        if click_action == "recenter" and (
+            st.session_state["center_latitude"] != clicked_coordinates[0]
+            or st.session_state["center_longitude"] != clicked_coordinates[1]
+        ):
+            set_center(
+                clicked_coordinates[0],
+                clicked_coordinates[1],
+                build_custom_point_name(clicked_coordinates[0], clicked_coordinates[1]),
+            )
+            st.session_state["selected_place_key"] = None
+            should_rerun = True
 
-    map_selected_key = extract_selected_key_from_map_event(
-        event if isinstance(event, dict) else None
-    )
-    if map_selected_key:
-        st.session_state["selected_place_key"] = map_selected_key
-        selected_place = find_place_by_key(places, map_selected_key)
-        selected_sample = find_sample_by_key(samples, map_selected_key)
+    if effective_clicked_key and click_action == "select_object" and not should_rerun:
+        st.session_state["pending_precise_sample_key"] = None
+        if st.session_state.get("selected_place_key") != effective_clicked_key:
+            st.session_state["selected_place_key"] = effective_clicked_key
+            should_rerun = True
+        selected_place = find_place_by_key(places, effective_clicked_key)
         if selected_place is not None:
-            st.session_state["map_center_latitude"] = selected_place.latitude
-            st.session_state["map_center_longitude"] = selected_place.longitude
-        elif selected_sample is not None:
-            st.session_state["map_center_latitude"] = selected_sample.latitude
-            st.session_state["map_center_longitude"] = selected_sample.longitude
+            if (
+                st.session_state["map_center_latitude"] != selected_place.latitude
+                or st.session_state["map_center_longitude"] != selected_place.longitude
+            ):
+                st.session_state["map_center_latitude"] = selected_place.latitude
+                st.session_state["map_center_longitude"] = selected_place.longitude
+                should_rerun = True
+
+    if click_action == "recenter" and not is_sample_key(effective_clicked_key):
+        st.session_state["pending_precise_sample_key"] = None
+
+    if should_rerun:
+        st.rerun()
     return selected_place
 
 
@@ -348,22 +373,61 @@ def main() -> None:
     st.title(translate("app_title"))
     st.caption(translate("app_subtitle"))
 
-    search_query, target_date, target_time, radius_m, search_clicked = render_sidebar()
+    (
+        search_query,
+        target_date,
+        target_time,
+        pending_radius_m,
+        search_clicked,
+        recalculate_clicked,
+        show_bars,
+    ) = render_sidebar()
 
     try:
         maybe_update_search_location(search_query, search_clicked)
-        st.session_state["radius_m"] = radius_m
+        if recalculate_clicked:
+            st.session_state["radius_m"] = pending_radius_m
+            st.session_state["selected_place_key"] = None
+            st.session_state["pending_precise_sample_key"] = None
         with st.spinner(translate("loading_data")):
             samples, context, scored_places, warnings = compute_demo_payload(
                 target_date,
                 target_time,
-                radius_m,
+                st.session_state["radius_m"],
+                st.session_state["layer_mode"],
             )
+            bar_places: list[CandidatePlace] = []
+            if show_bars:
+                try:
+                    bar_places = cached_fetch_nearby_bars(
+                        st.session_state["center_latitude"],
+                        st.session_state["center_longitude"],
+                        radius_m=st.session_state["radius_m"],
+                    )
+                except RequestException:
+                    warnings.append(translate("provider_warning"))
     except Exception as exc:  # noqa: BLE001
-        st.error(format_data_error_message(translate("data_error"), exc))
+        st.error(
+            format_data_error_message(
+                translate("data_error"),
+                exc,
+                retry_message=translate("retry_message"),
+                timeout_message=translate("timeout_message"),
+            )
+        )
         samples = []
-        context = {"cloud_cover": 0.0, "direct_radiation": 0.0, "diffuse_radiation": 0.0}
+        context = {
+            "cloud_cover": 0.0,
+            "shortwave_radiation": 0.0,
+            "direct_radiation": 0.0,
+            "diffuse_radiation": 0.0,
+            "direct_normal_irradiance": 0.0,
+            "wind_speed_10m": 0.0,
+            "wind_gusts_10m": 0.0,
+            "wind_direction_10m": 0.0,
+        }
         scored_places = []
+        bar_places = []
         warnings = []
 
     sunny_places, shady_places = split_ranked_places(scored_places)
@@ -375,6 +439,7 @@ def main() -> None:
     left_column, right_column = st.columns([2.2, 1.0], gap="large")
 
     with right_column:
+        sunny_title_key, shady_title_key = current_rank_title_keys()
         table_card = (
             "<div class='sunny-card'>"
             f"<strong>{translate('table_title')}</strong><br/>"
@@ -382,41 +447,110 @@ def main() -> None:
             "</div>"
         )
         st.markdown(table_card, unsafe_allow_html=True)
-        selected_from_sunny = render_places_table("most_sunny", sunny_places, "sunny")
-        selected_from_shady = render_places_table("least_sunny", shady_places, "shady")
+        selected_from_sunny = render_places_table(sunny_title_key, sunny_places, "sunny")
+        selected_from_shady = render_places_table(shady_title_key, shady_places, "shady")
         selected_place = selected_from_sunny or selected_from_shady or selected_place
         render_selected_place_card(selected_place)
 
     with left_column:
         st.subheader(translate("map_title"))
-        st.caption(translate("map_intro"))
+        st.caption(
+            translate("map_intro_wind")
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                translate("map_intro_comfort")
+                if st.session_state.get("layer_mode") == "comfort"
+                else translate("map_intro")
+            )
+        )
         st.caption(translate("hover_hint"))
         if samples:
             selected_from_map = render_map(
                 samples=samples,
                 places=scored_places,
+                bar_places=bar_places,
                 selected_key=st.session_state.get("selected_place_key"),
                 weather_context=context,
+                radius_m=st.session_state["radius_m"],
             )
             selected_place = selected_from_map or selected_place
         else:
             st.info(translate("data_error"))
 
+        summary_active_score = max((sample.score or 0.0) for sample in samples) if samples else 0.0
+
         summary_card = f"""
         <div class="sunny-card">
-            <strong>{translate("sun_summary")}</strong><br/>
+            <strong>{
+            translate("wind_summary")
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                translate("comfort_summary")
+                if st.session_state.get("layer_mode") == "comfort"
+                else translate("sun_summary")
+            )
+        }</strong><br/>
             <span class="sunny-kpi">
-                {translate("cloud_cover_label")}: {context["cloud_cover"]:.0f}%
+                {
+            translate("wind_speed_label")
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                translate("cloud_cover_label")
+                if st.session_state.get("layer_mode") == "sun"
+                else current_score_label()
+            )
+        }: {
+            f"{context['wind_speed_10m']:.1f} km/h"
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                f"{context['cloud_cover']:.0f}%"
+                if st.session_state.get("layer_mode") == "sun"
+                else f"{summary_active_score:.1f}"
+            )
+        }
             </span>
             <span class="sunny-kpi">
-                {translate("direct_radiation_label")}: {context["direct_radiation"]:.0f} W/m2
+                {
+            translate("wind_gusts_label")
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                translate("direct_radiation_label")
+                if st.session_state.get("layer_mode") == "sun"
+                else translate("wind_speed_label")
+            )
+        }: {
+            f"{context['wind_gusts_10m']:.1f} km/h"
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                f"{context['direct_radiation']:.0f} W/m2"
+                if st.session_state.get("layer_mode") == "sun"
+                else f"{context['wind_speed_10m']:.1f} km/h"
+            )
+        }
             </span>
             <span class="sunny-kpi">
-                {translate("diffuse_radiation_label")}: {context["diffuse_radiation"]:.0f} W/m2
+                {
+            translate("wind_direction_label")
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                translate("diffuse_radiation_label")
+                if st.session_state.get("layer_mode") == "sun"
+                else translate("direct_radiation_label")
+            )
+        }: {
+            f"{context['wind_direction_10m']:.0f} deg"
+            if st.session_state.get("layer_mode") == "wind"
+            else (
+                f"{context['diffuse_radiation']:.0f} W/m2"
+                if st.session_state.get("layer_mode") == "sun"
+                else f"{context['direct_radiation']:.0f} W/m2"
+            )
+        }
             </span>
         </div>
         """
         st.markdown(summary_card, unsafe_allow_html=True)
+        st.caption(translate("data_sources_caption"))
 
 
 if __name__ == "__main__":

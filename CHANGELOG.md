@@ -8,3 +8,34 @@
 - Added nearby place ranking with OpenStreetMap search fallbacks.
 - Added tests for i18n, theming, sampling, solar scoring, ranking, and API parsing.
 - Added repository metadata for public GitHub use, including MIT license and README.
+- Improved local map clicks so selecting a heatmap cell recenters the map consistently.
+- Reworked the heatmap coloring to use the local score range, making nearby differences visible.
+- Expanded map popups with cloud, radiation, elevation, and slope details.
+- Fixed terrain-derived slope calculations for trimmed circular sampling grids.
+- Added SSL retry fallbacks for Open-Meteo and Overpass requests to reduce local provider failures.
+- Prioritized more relaxation-friendly nearby places in the side rankings.
+- Made map clicks recenter the true analysis origin and recompute the heatmap around the clicked point.
+- Added dynamic grid sizing so cell side stays at or below 200 meters up to a 5 km radius.
+- Enabled Enter-to-search behavior in the sidebar search form.
+- Localized timeout and retry error messages in the UI.
+- Split elevation requests into batches so larger analysis radii remain viable.
+- Raised the minimum supported analysis radius to 100 meters.
+- Added an explicit button to apply radius changes instead of recalculating on every slider move.
+- Fixed place search so queries such as Madrid resolve correctly again.
+- Fixed repeated clicks inside a heatmap cell so the exact clicked point is used as the new analysis center.
+- Made the map zoom follow the currently applied radius after recalculations and selections.
+- Added a switchable wind layer with Open-Meteo wind speed, gust, and direction data.
+- Added terrain-aware wind scoring so windy areas are not rendered as a flat map.
+- Made the side rankings, popups, and summary card adapt to the active layer.
+- Added a third comfort mode that combines sunshine and breeze into a single outdoor comfort score.
+- Added an optional nearby bars layer so the map can also show bar locations from OpenStreetMap.
+- Fixed first clicks on heatmap cells that arrived without popup metadata so they arm the cell instead of recalculating immediately.
+- Made the selected heatmap cell keep its info popup open, so the active spot is easier to inspect.
+- Replaced the selected heatmap cell popup persistence with a permanent on-map info tooltip that survives Streamlit rerenders better.
+- Removed the old unused `pydeck` map layer module and cleaned stale theme, i18n, and documentation leftovers from the Folium migration.
+- Simplified the default app state and removed unused theme/view-state scaffolding that no longer affected runtime behavior.
+- Cached the expensive base analysis so cell selection, layer changes, and other reruns reuse terrain, weather, and nearby-place work instead of recomputing it.
+- Added a pinned `requirements.txt` for smoother Streamlit Community Cloud deployment.
+- Added a `THIRD_PARTY_LICENSES.md` summary covering dependency licenses and external service constraints for public deployment.
+- Improved public-repo metadata and documentation around licensing, attribution, and deployment.
+- Increased the minimum heatmap grid density for small radii so nearby views keep a useful number of cells instead of collapsing into only a few large bins.

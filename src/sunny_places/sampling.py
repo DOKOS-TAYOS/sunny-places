@@ -67,45 +67,47 @@ def generate_sample_grid(
 
 
 def apply_terrain_metrics(samples: list[SamplePoint]) -> list[SamplePoint]:
-    by_position = sorted(samples, key=lambda sample: (-sample.latitude, sample.longitude))
-
-    sample_rows: list[list[SamplePoint]] = []
-    current_row: list[SamplePoint] = []
-    previous_latitude: float | None = None
-    for sample in by_position:
-        if previous_latitude is None or abs(sample.latitude - previous_latitude) < 1e-10:
-            current_row.append(sample)
-        else:
-            sample_rows.append(current_row)
-            current_row = [sample]
-        previous_latitude = sample.latitude
-    if current_row:
-        sample_rows.append(current_row)
-
-    if not sample_rows:
+    if not samples:
         return samples
 
-    for row in sample_rows:
-        row.sort(key=lambda sample: sample.longitude)
-
-    rows_count = len(sample_rows)
-    columns_count = max(len(row) for row in sample_rows)
-    if rows_count < 3 or columns_count < 3:
+    latitudes = sorted({sample.latitude for sample in samples}, reverse=True)
+    longitudes = sorted({sample.longitude for sample in samples})
+    if len(latitudes) < 3 or len(longitudes) < 3:
         return samples
 
-    for row_index in range(1, rows_count - 1):
-        previous_row = sample_rows[row_index - 1]
-        current = sample_rows[row_index]
-        next_row = sample_rows[row_index + 1]
-        if len(previous_row) != len(current) or len(current) != len(next_row):
-            continue
+    sample_lookup = {
+        (round(sample.latitude, 10), round(sample.longitude, 10)): sample for sample in samples
+    }
 
-        for column_index in range(1, len(current) - 1):
-            center = current[column_index]
-            west = current[column_index - 1]
-            east = current[column_index + 1]
-            north = previous_row[column_index]
-            south = next_row[column_index]
+    if len(sample_lookup) < 5:
+        return samples
+
+    for row_index in range(1, len(latitudes) - 1):
+        for column_index in range(1, len(longitudes) - 1):
+            center = sample_lookup.get(
+                (round(latitudes[row_index], 10), round(longitudes[column_index], 10))
+            )
+            west = sample_lookup.get(
+                (round(latitudes[row_index], 10), round(longitudes[column_index - 1], 10))
+            )
+            east = sample_lookup.get(
+                (round(latitudes[row_index], 10), round(longitudes[column_index + 1], 10))
+            )
+            north = sample_lookup.get(
+                (round(latitudes[row_index - 1], 10), round(longitudes[column_index], 10))
+            )
+            south = sample_lookup.get(
+                (round(latitudes[row_index + 1], 10), round(longitudes[column_index], 10))
+            )
+
+            if any(point is None for point in (center, west, east, north, south)):
+                continue
+
+            assert center is not None
+            assert west is not None
+            assert east is not None
+            assert north is not None
+            assert south is not None
 
             elevations = (
                 center.elevation_m,

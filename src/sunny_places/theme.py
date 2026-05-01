@@ -1,23 +1,12 @@
 from __future__ import annotations
 
 DARK_THEME: dict[str, str | float] = {
-    "base": "dark",
     "background": "#07111d",
-    "panel": "#0f1b2d",
     "text": "#f5f7fb",
     "muted": "#9fb2c9",
     "accent": "#ffbc42",
     "accent_secondary": "#7ae7c7",
 }
-
-
-def build_map_style() -> dict[str, str | float]:
-    return {
-        "basemap_style": "dark",
-        "heatmap_alpha": 0.28,
-        "point_fill": [255, 188, 66, 145],
-        "selected_fill": [122, 231, 199, 230],
-    }
 
 
 def build_streamlit_css() -> str:

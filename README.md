@@ -2,6 +2,8 @@
 
 Sunny Places is a bilingual `Streamlit` app that helps people find nearby sunny spots where they can relax. It starts centered on Bilbao, lets you search anywhere in the world, and combines solar geometry, Open-Meteo weather data, and local terrain to estimate how pleasant the sun should feel around you.
 
+The repository itself is licensed under `MIT`. Third-party software and service terms are summarized in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
 ## Features
 
 - Dark-mode UI from the first load.
@@ -9,7 +11,7 @@ Sunny Places is a bilingual `Streamlit` app that helps people find nearby sunny 
 - Worldwide place search.
 - Date and local-time controls.
 - Nearby solar heatmap with low opacity so the basemap stays readable.
-- Hoverable or clickable sample points with coordinates and sun score.
+- Clickable heatmap cells with coordinates and score details.
 - Ranked lists of the most and least sunny nearby places.
 - Fallback to computed sample points when named places are scarce.
 
@@ -41,6 +43,21 @@ pip install -e .[dev]
 streamlit run app.py
 ```
 
+## Deploy on Streamlit Community Cloud
+
+This repository is ready to deploy as a public app on `Streamlit Community Cloud`.
+
+Recommended deployment settings:
+
+1. Use `app.py` as the entrypoint.
+2. Let Community Cloud install dependencies from [requirements.txt](requirements.txt).
+3. Use the same Python major/minor version you develop with locally when possible.
+
+Official Streamlit deployment docs:
+
+- [Community Cloud overview](https://docs.streamlit.io/deploy/streamlit-community-cloud)
+- [App dependencies](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies)
+
 ## Quality Checks
 
 Before finishing Python work in this repo, run:
@@ -65,12 +82,22 @@ tests/
 Key modules:
 
 - `i18n.py`: Spanish/English strings.
-- `theme.py`: dark theme and map styling.
+- `theme.py`: dark theme styling.
 - `sampling.py`: local sampling grid and terrain metrics.
 - `solar.py`: solar position and sun score.
 - `weather.py`: Open-Meteo adapters.
 - `geocoding.py`: place search and nearby named places.
-- `map_layers.py`: `pydeck` map layers.
+- `map_folium.py`: Folium map rendering and interactive overlays.
+
+## Licensing and External Services
+
+The project code is `MIT`, but the live app depends on third-party data/services with their own rules.
+
+- `Open-Meteo`: the free API terms are the main commercial caution point. At the time checked for this repo, the free tier is described for `non-commercial use` and tied to `CC-BY 4.0` attribution.
+- `OpenStreetMap / Nominatim / Overpass`: attribution is required, usage of the public infrastructure must stay moderate, and OSM data is generally under `ODbL`.
+- `CARTO` basemap tiles: attribution is already shown on the map; if usage grows, review their current public basemap terms.
+
+See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for the detailed dependency and service summary.
 
 ## Deployment Notes
 

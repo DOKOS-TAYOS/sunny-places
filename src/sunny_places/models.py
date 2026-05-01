@@ -23,6 +23,9 @@ class WeatherSnapshot:
     direct_radiation: float
     diffuse_radiation: float
     direct_normal_irradiance: float
+    wind_speed_10m: float = 0.0
+    wind_gusts_10m: float = 0.0
+    wind_direction_10m: float = 0.0
     timezone_name: str = "UTC"
     utc_offset_seconds: int = 0
 
@@ -41,6 +44,8 @@ class SamplePoint:
     elevation_m: float | None = None
     slope_deg: float = 0.0
     aspect_deg: float = 180.0
+    sun_score: float | None = None
+    wind_score: float | None = None
     score: float | None = None
 
 
@@ -56,8 +61,8 @@ class CandidatePlace:
 
 
 @dataclass(slots=True)
-class ViewState:
-    center: GeoPoint
-    zoom: float
-    locale: str
-    theme: str
+class AnalysisBasePayload:
+    samples: list[SamplePoint]
+    places: list[CandidatePlace]
+    weather_snapshot: WeatherSnapshot
+    warnings: list[str]

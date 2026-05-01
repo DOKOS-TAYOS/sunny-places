@@ -1,12 +1,13 @@
-from sunny_places.theme import DARK_THEME, build_map_style
+from sunny_places.theme import DARK_THEME, build_streamlit_css
 
 
-def test_dark_theme_uses_dark_base_mode() -> None:
-    assert DARK_THEME["base"] == "dark"
+def test_dark_theme_contains_expected_core_colors() -> None:
+    assert DARK_THEME["background"].startswith("#")
+    assert DARK_THEME["accent"].startswith("#")
 
 
-def test_build_map_style_exposes_low_heatmap_alpha() -> None:
-    style = build_map_style()
+def test_build_streamlit_css_includes_theme_colors() -> None:
+    css = build_streamlit_css()
 
-    assert style["heatmap_alpha"] < 0.45
-    assert style["basemap_style"]
+    assert DARK_THEME["background"] in css
+    assert DARK_THEME["text"] in css
