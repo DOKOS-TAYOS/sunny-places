@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+# ruff: noqa: E402
+import sys
 from datetime import date, datetime, time
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from requests import RequestException
 from streamlit_folium import st_folium
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+SRC_PATH = PROJECT_ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
 
 from sunny_places.app_state import DEFAULT_CENTER, DEFAULT_LOCALE
 from sunny_places.demo_logic import (
