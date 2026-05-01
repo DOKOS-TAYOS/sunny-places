@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sunny-places"
+version = "0.1.0"
+description = "Streamlit app to find nearby sunny places using solar geometry, weather, and terrain."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Aleja" }]
+dependencies = [
+    "folium>=0.18,<0.21",
+    "numpy>=1.26,<3",
+    "pandas>=2.2,<3",
+    "pydeck>=0.9,<1",
+    "requests>=2.32,<3",
+    "streamlit>=1.44,<2",
+    "streamlit-folium>=0.24,<0.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9",
+    "ruff>=0.11,<0.12",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "UP",
+    "N",
+]
+
+[tool.ruff.format]
+quote-style = "double"
