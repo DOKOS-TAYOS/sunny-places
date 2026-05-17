@@ -1,6 +1,12 @@
+import pytest
+import requests
+
 from sunny_places.geocoding import (
+    _get_with_ssl_fallback,
+    _post_with_ssl_fallback,
     build_overpass_bar_query,
     build_overpass_query,
+    get_request_verify_path,
     parse_nearby_places,
     parse_search_results,
     search_places,
@@ -55,7 +61,7 @@ def test_build_overpass_bar_query_targets_bars_and_pubs() -> None:
     assert "out center;" in query
 
 
-def test_search_places_uses_helper_timeout_signature(monkeypatch: object) -> None:
+def test_search_places_uses_helper_timeout_signature(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
     class FakeResponse:
@@ -90,3 +96,61 @@ def test_search_places_uses_helper_timeout_signature(monkeypatch: object) -> Non
 
     assert results[0].name == "Madrid, Comunidad de Madrid, España"
     assert captured["timeout_s"] == 9.0
+
+
+def test_geocoding_get_does_not_retry_with_disabled_tls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    verify_values: list[str | bool] = []
+
+    def fake_get(
+        url: str,
+        *,
+        params: dict[str, str | int],
+        headers: dict[str, str],
+        timeout: float,
+        verify: str | bool,
+    ) -> requests.Response:
+        verify_values.append(verify)
+        raise requests.exceptions.SSLError("certificate verify failed")
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    with pytest.raises(requests.exceptions.SSLError):
+        _get_with_ssl_fallback(
+            "https://example.invalid",
+            params={"q": "Bilbao"},
+            headers={"User-Agent": "test"},
+            timeout_s=1.0,
+        )
+
+    assert verify_values == [get_request_verify_path()]
+
+
+def test_geocoding_post_does_not_retry_with_disabled_tls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    verify_values: list[str | bool] = []
+
+    def fake_post(
+        url: str,
+        *,
+        data: bytes,
+        headers: dict[str, str],
+        timeout: float,
+        verify: str | bool,
+    ) -> requests.Response:
+        verify_values.append(verify)
+        raise requests.exceptions.SSLError("certificate verify failed")
+
+    monkeypatch.setattr(requests, "post", fake_post)
+
+    with pytest.raises(requests.exceptions.SSLError):
+        _post_with_ssl_fallback(
+            "https://example.invalid",
+            data=b"query",
+            headers={"User-Agent": "test"},
+            timeout_s=1.0,
+        )
+
+    assert verify_values == [get_request_verify_path()]

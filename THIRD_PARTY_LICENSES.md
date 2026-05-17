@@ -22,6 +22,7 @@ These are the app-level dependencies declared for deployment.
 
 | Package | Tested version | License |
 | --- | ---: | --- |
+| `certifi` | `2026.4.22` | MPL-2.0 |
 | `folium` | `0.20.0` | MIT |
 | `numpy` | `2.4.4` | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 |
 | `pandas` | `2.3.3` | BSD-3-Clause |
@@ -38,6 +39,7 @@ Notes:
 
 | Package | Tested version | License |
 | --- | ---: | --- |
+| `pip-audit` | local/CI tool | Apache-2.0 |
 | `pytest` | `8.4.2` | MIT |
 | `ruff` | `0.11.13` | MIT |
 
@@ -50,7 +52,6 @@ These are notable runtime dependencies pulled in indirectly, especially through 
 | `altair` | `6.1.0` | BSD-style |
 | `anyio` | `4.13.0` | MIT |
 | `branca` | `0.8.2` | MIT |
-| `certifi` | `2026.4.22` | MPL-2.0 |
 | `click` | `8.3.3` | BSD-3-Clause |
 | `GitPython` | `3.1.49` | BSD-3-Clause |
 | `Jinja2` | `3.1.6` | BSD-style |

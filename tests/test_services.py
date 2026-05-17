@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
 
+import pytest
+
 from sunny_places.models import CandidatePlace, SamplePoint, SearchResult, WeatherSnapshot
 from sunny_places.services import (
     cached_compute_analysis_base,
@@ -8,7 +10,7 @@ from sunny_places.services import (
 )
 
 
-def test_cached_search_places_returns_stable_results(monkeypatch: object) -> None:
+def test_cached_search_places_returns_stable_results(monkeypatch: pytest.MonkeyPatch) -> None:
     call_counter = {"count": 0}
 
     def fake_search_places(query: str, limit: int = 5) -> list[SearchResult]:
@@ -26,7 +28,9 @@ def test_cached_search_places_returns_stable_results(monkeypatch: object) -> Non
     assert call_counter["count"] == 1
 
 
-def test_cached_fetch_weather_snapshot_returns_stable_snapshot(monkeypatch: object) -> None:
+def test_cached_fetch_weather_snapshot_returns_stable_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     call_counter = {"count": 0}
 
     def fake_fetch_weather_snapshot(
@@ -59,7 +63,9 @@ def test_cached_fetch_weather_snapshot_returns_stable_snapshot(monkeypatch: obje
     assert call_counter["count"] == 1
 
 
-def test_cached_compute_analysis_base_reuses_full_analysis(monkeypatch: object) -> None:
+def test_cached_compute_analysis_base_reuses_full_analysis(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     call_counter = {
         "grid": 0,
         "elevations": 0,

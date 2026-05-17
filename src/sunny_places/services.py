@@ -120,8 +120,6 @@ def build_weather_context(
         "wind_speed_10m": weather_snapshot.wind_speed_10m,
         "wind_gusts_10m": weather_snapshot.wind_gusts_10m,
         "wind_direction_10m": weather_snapshot.wind_direction_10m,
-        "radius_m": radius_m,
-        "layer_mode": layer_mode,
     }
 
 

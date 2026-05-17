@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 
 from sunny_places.models import CandidatePlace, SamplePoint
 
@@ -97,7 +98,7 @@ def find_clicked_sample_key(
     return None
 
 
-def extract_selected_key_from_map_event(event: dict[str, object] | None) -> str | None:
+def extract_selected_key_from_map_event(event: Mapping[str, object] | None) -> str | None:
     if not event:
         return None
 
@@ -110,7 +111,7 @@ def extract_selected_key_from_map_event(event: dict[str, object] | None) -> str 
     return match.group(1)
 
 
-def extract_clicked_coordinates(event: dict[str, object] | None) -> tuple[float, float] | None:
+def extract_clicked_coordinates(event: Mapping[str, object] | None) -> tuple[float, float] | None:
     if not event:
         return None
     for key in ("last_object_clicked", "last_clicked"):

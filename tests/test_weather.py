@@ -1,4 +1,8 @@
+import pytest
+import requests
+
 from sunny_places.weather import (
+    _get_with_ssl_fallback,
     get_request_verify_path,
     parse_weather_snapshot,
     split_coordinate_batches,
@@ -33,6 +37,33 @@ def test_get_request_verify_path_returns_certificate_bundle() -> None:
 
     assert verify_path
     assert verify_path.endswith(".pem")
+
+
+def test_get_with_ssl_fallback_does_not_retry_with_disabled_tls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    verify_values: list[str | bool] = []
+
+    def fake_get(
+        url: str,
+        *,
+        params: dict[str, str | float],
+        timeout: float,
+        verify: str | bool,
+    ) -> requests.Response:
+        verify_values.append(verify)
+        raise requests.exceptions.SSLError("certificate verify failed")
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    with pytest.raises(requests.exceptions.SSLError):
+        _get_with_ssl_fallback(
+            "https://example.invalid",
+            params={"latitude": 43.0},
+            timeout_s=1.0,
+        )
+
+    assert verify_values == [get_request_verify_path()]
 
 
 def test_split_coordinate_batches_limits_batch_size() -> None:

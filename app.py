@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 # ruff: noqa: E402
+import html
 import sys
 from datetime import date, datetime, time
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 import streamlit as st
@@ -162,7 +164,7 @@ def render_sidebar() -> tuple[str, date, time, float, bool, bool, bool]:
     )
     recalculate_clicked = st.sidebar.button(translate("recompute_button"), width="stretch")
     return (
-        search_query,
+        cast(str, search_query),
         target_date,
         target_time,
         radius_m,
@@ -232,12 +234,14 @@ def render_selected_place_card(selected_place: CandidatePlace | None) -> None:
         st.caption(translate("selected_none"))
         return
 
+    safe_name = html.escape(selected_place.name)
+    safe_category = html.escape(selected_place.category)
     card_html = f"""
     <div class="sunny-card sunny-card-strong">
         <strong>{translate("selected_place")}</strong><br/>
-        <div>{selected_place.name}</div>
+        <div>{safe_name}</div>
         <div class="sunny-kpi">{current_score_label()}: {selected_place.score:.1f}</div>
-        <div class="sunny-kpi">{translate("table_category")}: {selected_place.category}</div>
+        <div class="sunny-kpi">{translate("table_category")}: {safe_category}</div>
         <div class="sunny-kpi">
             {translate("table_distance")}: {selected_place.distance_m or 0.0:.0f} m
         </div>

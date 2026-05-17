@@ -40,3 +40,6 @@
 - Improved public-repo metadata and documentation around licensing, attribution, and deployment.
 - Increased the minimum heatmap grid density for small radii so nearby views keep a useful number of cells instead of collapsing into only a few large bins.
 - Bootstrapped the local `src` package path from `app.py` so Streamlit Community Cloud can import the app package reliably without extra install steps.
+- Added Dependabot, dependency review, CodeQL, and pip-audit GitHub workflows for security coverage.
+- Removed insecure HTTPS fallbacks that retried provider requests with certificate verification disabled.
+- Escaped external place names and categories before rendering them inside custom HTML.

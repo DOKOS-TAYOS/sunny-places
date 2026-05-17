@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+import certifi
 import requests
-import urllib3
 
 from sunny_places.models import WeatherSnapshot
 
@@ -25,7 +25,7 @@ WEATHER_FIELDS = [
 
 
 def get_request_verify_path() -> str:
-    return requests.certs.where()
+    return certifi.where()
 
 
 def split_coordinate_batches(
@@ -46,21 +46,12 @@ def _get_with_ssl_fallback(
     params: dict[str, str | float],
     timeout_s: float,
 ) -> requests.Response:
-    try:
-        return requests.get(
-            url,
-            params=params,
-            timeout=timeout_s,
-            verify=get_request_verify_path(),
-        )
-    except requests.exceptions.SSLError:
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        return requests.get(
-            url,
-            params=params,
-            timeout=timeout_s,
-            verify=False,
-        )
+    return requests.get(
+        url,
+        params=params,
+        timeout=timeout_s,
+        verify=get_request_verify_path(),
+    )
 
 
 def parse_weather_snapshot(payload: dict[str, Any], target_time: str) -> WeatherSnapshot:

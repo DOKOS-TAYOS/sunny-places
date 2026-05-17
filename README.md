@@ -70,6 +70,12 @@ Before finishing Python work in this repo, run:
 
 If `pyright` is later added to the project, run it before pushing as well.
 
+## Security Checks
+
+The repo includes GitHub workflows for CI, `pip-audit`, CodeQL, and dependency review. Dependabot is configured for Python dependencies and GitHub Actions.
+
+For `Streamlit Community Cloud`, keep secrets out of the repo. Local secrets belong in `.streamlit/secrets.toml`, which is ignored by Git. Cloud secrets should be configured in the Streamlit app settings, not committed to code.
+
 ## Project Structure
 
 ```text

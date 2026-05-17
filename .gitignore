@@ -12,3 +12,4 @@ dist/
 htmlcov/
 .coverage
 *.log
+conversation_with_codex_markdown.md

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import certifi
 import requests
-import urllib3
 
 from sunny_places.models import CandidatePlace, SearchResult
 from sunny_places.sampling import great_circle_distance_m
@@ -18,7 +18,7 @@ OVERPASS_URLS = [
 
 
 def get_request_verify_path() -> str:
-    return requests.certs.where()
+    return certifi.where()
 
 
 def _get_with_ssl_fallback(
@@ -28,23 +28,13 @@ def _get_with_ssl_fallback(
     headers: dict[str, str],
     timeout_s: float,
 ) -> requests.Response:
-    try:
-        return requests.get(
-            url,
-            params=params,
-            headers=headers,
-            timeout=timeout_s,
-            verify=get_request_verify_path(),
-        )
-    except requests.exceptions.SSLError:
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        return requests.get(
-            url,
-            params=params,
-            headers=headers,
-            timeout=timeout_s,
-            verify=False,
-        )
+    return requests.get(
+        url,
+        params=params,
+        headers=headers,
+        timeout=timeout_s,
+        verify=get_request_verify_path(),
+    )
 
 
 def _post_with_ssl_fallback(
@@ -54,23 +44,13 @@ def _post_with_ssl_fallback(
     headers: dict[str, str],
     timeout_s: float,
 ) -> requests.Response:
-    try:
-        return requests.post(
-            url,
-            data=data,
-            headers=headers,
-            timeout=timeout_s,
-            verify=get_request_verify_path(),
-        )
-    except requests.exceptions.SSLError:
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        return requests.post(
-            url,
-            data=data,
-            headers=headers,
-            timeout=timeout_s,
-            verify=False,
-        )
+    return requests.post(
+        url,
+        data=data,
+        headers=headers,
+        timeout=timeout_s,
+        verify=get_request_verify_path(),
+    )
 
 
 def parse_search_results(payload: list[dict[str, Any]]) -> list[SearchResult]:

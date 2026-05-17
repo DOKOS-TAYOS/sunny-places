@@ -7,7 +7,8 @@ from sunny_places.models import SolarPosition, WeatherSnapshot
 
 
 def calculate_solar_position(latitude: float, longitude: float, instant: datetime) -> SolarPosition:
-    if instant.tzinfo is None or instant.utcoffset() is None:
+    utc_offset = instant.utcoffset()
+    if instant.tzinfo is None or utc_offset is None:
         raise ValueError("instant must be timezone-aware")
 
     day_of_year = instant.timetuple().tm_yday
@@ -36,7 +37,7 @@ def calculate_solar_position(latitude: float, longitude: float, instant: datetim
         - 0.040849 * sin(2 * gamma)
     )
 
-    timezone_offset_minutes = (instant.utcoffset() or instant.utcoffset()).total_seconds() / 60.0
+    timezone_offset_minutes = utc_offset.total_seconds() / 60.0
     true_solar_time = (
         hour_decimal * 60.0 + equation_of_time + 4.0 * longitude - timezone_offset_minutes
     ) % 1440.0

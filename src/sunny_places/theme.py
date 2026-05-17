@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-DARK_THEME: dict[str, str | float] = {
+DARK_THEME: dict[str, str] = {
     "background": "#07111d",
     "text": "#f5f7fb",
     "muted": "#9fb2c9",

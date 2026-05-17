@@ -321,7 +321,7 @@ def build_folium_map(
                 max_width=340,
                 show=True,
             ),
-            tooltip=place.name,
+            tooltip=html.escape(place.name),
         ).add_to(places_group)
     places_group.add_to(folium_map)
 
@@ -343,7 +343,7 @@ def build_folium_map(
                 ),
                 max_width=260,
             ),
-            tooltip=bar_place.name,
+            tooltip=html.escape(bar_place.name),
         ).add_to(bars_group)
     bars_group.add_to(folium_map)
 
