@@ -18,6 +18,11 @@ updates:
           - "patch"
     commit-message:
       prefix: "deps"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -36,3 +41,8 @@ updates:
           - "patch"
     commit-message:
       prefix: "ci"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
