@@ -45,3 +45,4 @@
 - Removed insecure HTTPS fallbacks that retried provider requests with certificate verification disabled.
 - Escaped external place names and categories before rendering them inside custom HTML.
 - Applied recommended Dependabot updates for GitHub Actions, pytest, ruff, numpy, requests, and streamlit-folium.
+- Updated GitHub Actions workflows to use `actions/checkout@v7`.
