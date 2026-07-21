@@ -24,7 +24,6 @@ These are the app-level dependencies declared for deployment.
 | --- | ---: | --- |
 | `certifi` | `2026.6.17` | MPL-2.0 |
 | `folium` | `0.20.0` | MIT |
-| `numpy` | `2.5.1` | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 |
 | `pandas` | `3.0.4` | BSD-3-Clause |
 | `requests` | `2.34.2` | Apache-2.0 |
 | `streamlit` | `1.59.2` | Apache-2.0 |
@@ -33,7 +32,6 @@ These are the app-level dependencies declared for deployment.
 Notes:
 
 - `streamlit-folium` does not expose its license cleanly in the installed wheel metadata used in this environment, but its official GitHub repository declares `MIT`.
-- `numpy` bundles several permissive upstream license notices in its distribution; none of them are strong copyleft.
 
 ## Development Tooling
 
