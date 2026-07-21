@@ -22,13 +22,13 @@ These are the app-level dependencies declared for deployment.
 
 | Package | Tested version | License |
 | --- | ---: | --- |
-| `certifi` | `2026.4.22` | MPL-2.0 |
+| `certifi` | `2026.6.17` | MPL-2.0 |
 | `folium` | `0.20.0` | MIT |
-| `numpy` | `2.4.4` | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 |
-| `pandas` | `2.3.3` | BSD-3-Clause |
-| `requests` | `2.33.1` | Apache-2.0 |
-| `streamlit` | `1.57.0` | Apache-2.0 |
-| `streamlit-folium` | `0.25.3` | MIT |
+| `numpy` | `2.5.1` | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 |
+| `pandas` | `3.0.4` | BSD-3-Clause |
+| `requests` | `2.34.2` | Apache-2.0 |
+| `streamlit` | `1.59.2` | Apache-2.0 |
+| `streamlit-folium` | `0.27.2` | MIT |
 
 Notes:
 
