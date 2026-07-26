@@ -73,9 +73,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "data_sources_caption": (
             "Datos meteorologicos de [Open-Meteo](https://open-meteo.com) "
             "([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)); "
+            "elevaciones via la Elevation API de Open-Meteo basadas en "
+            "[Copernicus DEM GLO-90](https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model) "
+            "(programa Copernicus / Union Europea y ESA); "
             "datos de mapa © [contribuidores de OpenStreetMap](https://www.openstreetmap.org/copyright) "
             "([ODbL](https://opendatacommons.org/licenses/odbl/)); "
-            "teselas base © CARTO."
+            "teselas base © OpenStreetMap."
         ),
         "sun_summary": (
             "Cuanto mayor el indice, mas agradable deberia sentirse el sol en ese punto."
@@ -161,9 +164,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "data_sources_caption": (
             "Weather data by [Open-Meteo](https://open-meteo.com) "
             "([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)); "
+            "elevations via the Open-Meteo Elevation API based on "
+            "[Copernicus DEM GLO-90](https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model) "
+            "(Copernicus programme / European Union and ESA); "
             "map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) "
             "([ODbL](https://opendatacommons.org/licenses/odbl/)); "
-            "basemap tiles © CARTO."
+            "basemap tiles © OpenStreetMap."
         ),
         "sun_summary": "The higher the score, the more pleasant the sun should feel there.",
         "wind_summary": "The higher the score, the windier that spot should feel.",

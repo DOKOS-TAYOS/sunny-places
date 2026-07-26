@@ -14,6 +14,7 @@ This file documents the main third-party software and service terms that matter 
   - `MPL-2.0` in `certifi`: weak copyleft at file level. This is generally compatible with an MIT project, but the original notices must be preserved when redistributing that package.
 - The biggest restrictions are not from the Python package licenses, but from the external services and data sources:
   - `Open-Meteo` free API terms for non-commercial use.
+  - `Copernicus DEM` attribution for elevation data served via Open-Meteo.
   - `OpenStreetMap` data and public infrastructure usage policies.
 
 ## Direct Runtime Dependencies
@@ -88,6 +89,19 @@ Practical meaning for this repository:
 - Fine for a personal/public demo or non-commercial public app, assuming you respect attribution and rate limits.
 - If you want to commercialize the app or deploy it as part of a paid product/service, review Open-Meteo's current commercial terms first.
 
+### Copernicus DEM (via Open-Meteo Elevation API)
+
+- Elevation endpoint docs: [open-meteo.com/en/docs/elevation-api](https://open-meteo.com/en/docs/elevation-api)
+- Dataset: Copernicus DEM 2021 release **GLO-90** (~90 m)
+- Programme credit: [Copernicus](https://www.copernicus.eu/) / European Union and ESA
+- Research citation DOI requested by ESA/EU users: [10.5270/ESA-c5d3d65](https://doi.org/10.5270/ESA-c5d3d65)
+- Open-Meteo requires clear attribution to **both** the Copernicus programme and Open-Meteo when using elevation data.
+
+Practical meaning:
+
+- Keep Copernicus + Open-Meteo credit visible in the app caption and README.
+- Elevations are fetched at runtime; this app does not redistribute a DEM dump.
+
 ### OpenStreetMap / Nominatim
 
 - Official usage policy: [operations.osmfoundation.org/policies/nominatim](https://operations.osmfoundation.org/policies/nominatim/)
@@ -124,10 +138,12 @@ Practical meaning:
 - That is not a blocker for this repository remaining MIT, but attribution is required and share-alike obligations can matter depending on how much data is extracted, stored, transformed, or redistributed.
 - This app queries OSM services at runtime and does not redistribute an OSM database dump; keep the visible ODbL/OSM attribution in the UI and docs.
 
-### CARTO Basemap Tiles
+### OpenStreetMap Basemap Tiles
 
-- The map UI already includes visible tile attribution for `OpenStreetMap` and `CARTO`.
-- If the deployment becomes popular, review CARTO's current basemap terms and quotas before treating the public basemap endpoint as guaranteed infrastructure.
+- The map uses Folium's built-in `OpenStreetMap` tile layer (public OSM tile servers), not a third-party basemap CDN such as CARTO.
+- Tile usage policy: [operations.osmfoundation.org/policies/tiles](https://operations.osmfoundation.org/policies/tiles/)
+- Attribution is required and is shown on the map control and in the app caption / README.
+- Public OSM tiles are appropriate for light/demo traffic; heavy production traffic should use a self-hosted or commercial tile provider.
 
 ## Recommendation
 

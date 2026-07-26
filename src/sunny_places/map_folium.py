@@ -8,8 +8,8 @@ from sunny_places.models import CandidatePlace, SamplePoint
 from sunny_places.theme import DARK_THEME
 from sunny_places.ui_state import build_place_key, build_sample_key
 
-DARK_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-DARK_TILE_ATTR = "&copy; OpenStreetMap contributors &copy; CARTO"
+# Folium's built-in OSM tiles are public-demo-safe with required OSM attribution.
+BASEMAP_TILES = "OpenStreetMap"
 
 
 def _build_popup_html(
@@ -226,8 +226,7 @@ def build_folium_map(
     folium_map = folium.Map(
         location=[center_latitude, center_longitude],
         zoom_start=zoom_start,
-        tiles=DARK_TILE_URL,
-        attr=DARK_TILE_ATTR,
+        tiles=BASEMAP_TILES,
         control_scale=True,
     )
 

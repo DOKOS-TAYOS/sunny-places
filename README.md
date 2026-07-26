@@ -100,8 +100,9 @@ Key modules:
 The project code is under the [MIT License](LICENSE). The live app depends on third-party data/services with their own rules; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 - `Open-Meteo`: free API terms are the main commercial caution. Weather data requires [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) attribution ([Open-Meteo](https://open-meteo.com); [terms](https://open-meteo.com/en/terms)).
+- `Copernicus DEM GLO-90`: elevation samples come from the Open-Meteo Elevation API, which uses Copernicus DEM GLO-90. Credit the [Copernicus programme](https://www.copernicus.eu/) (European Union and ESA) alongside Open-Meteo ([Elevation API](https://open-meteo.com/en/docs/elevation-api); DOI [10.5270/ESA-c5d3d65](https://doi.org/10.5270/ESA-c5d3d65)).
 - `OpenStreetMap / Nominatim / Overpass`: attribution is required, public infrastructure use must stay moderate, and OSM data is under [ODbL](https://opendatacommons.org/licenses/odbl/) ([copyright](https://www.openstreetmap.org/copyright)).
-- `CARTO` basemap tiles: attribution is already shown on the map; if usage grows, review their current public basemap terms.
+- Basemap tiles: the app uses Folium's built-in OpenStreetMap tiles with visible OSM attribution. Keep usage moderate per the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 
 Optional citation metadata: [CITATION.cff](CITATION.cff).
 
