@@ -2,7 +2,7 @@
 
 Sunny Places is a bilingual `Streamlit` app that helps people find nearby sunny spots where they can relax. It starts centered on Bilbao, lets you search anywhere in the world, and combines solar geometry, Open-Meteo weather data, and local terrain to estimate how pleasant the sun should feel around you.
 
-The repository itself is licensed under `MIT`. Third-party software and service terms are summarized in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+The repository itself is licensed under the [MIT License](LICENSE). Third-party software and service terms are summarized in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ## Features
 
@@ -97,13 +97,13 @@ Key modules:
 
 ## Licensing and External Services
 
-The project code is `MIT`, but the live app depends on third-party data/services with their own rules.
+The project code is under the [MIT License](LICENSE). The live app depends on third-party data/services with their own rules; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
-- `Open-Meteo`: the free API terms are the main commercial caution point. At the time checked for this repo, the free tier is described for `non-commercial use` and tied to `CC-BY 4.0` attribution.
-- `OpenStreetMap / Nominatim / Overpass`: attribution is required, usage of the public infrastructure must stay moderate, and OSM data is generally under `ODbL`.
+- `Open-Meteo`: free API terms are the main commercial caution. Weather data requires [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) attribution ([Open-Meteo](https://open-meteo.com); [terms](https://open-meteo.com/en/terms)).
+- `OpenStreetMap / Nominatim / Overpass`: attribution is required, public infrastructure use must stay moderate, and OSM data is under [ODbL](https://opendatacommons.org/licenses/odbl/) ([copyright](https://www.openstreetmap.org/copyright)).
 - `CARTO` basemap tiles: attribution is already shown on the map; if usage grows, review their current public basemap terms.
 
-See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for the detailed dependency and service summary.
+Optional citation metadata: [CITATION.cff](CITATION.cff).
 
 ## Deployment Notes
 

@@ -71,7 +71,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "table_distance": "Distancia (m)",
         "hover_hint": "Pulsa un punto del mapa o una fila para ver mas detalle.",
         "data_sources_caption": (
-            "Fuentes: Open-Meteo, OpenStreetMap (Nominatim/Overpass) y CARTO."
+            "Datos meteorologicos de [Open-Meteo](https://open-meteo.com) "
+            "([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)); "
+            "datos de mapa © [contribuidores de OpenStreetMap](https://www.openstreetmap.org/copyright) "
+            "([ODbL](https://opendatacommons.org/licenses/odbl/)); "
+            "teselas base © CARTO."
         ),
         "sun_summary": (
             "Cuanto mayor el indice, mas agradable deberia sentirse el sol en ese punto."
@@ -155,7 +159,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "table_distance": "Distance (m)",
         "hover_hint": "Click a map point or a ranked row to inspect it.",
         "data_sources_caption": (
-            "Sources: Open-Meteo, OpenStreetMap (Nominatim/Overpass), and CARTO."
+            "Weather data by [Open-Meteo](https://open-meteo.com) "
+            "([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)); "
+            "map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) "
+            "([ODbL](https://opendatacommons.org/licenses/odbl/)); "
+            "basemap tiles © CARTO."
         ),
         "sun_summary": "The higher the score, the more pleasant the sun should feel there.",
         "wind_summary": "The higher the score, the windier that spot should feel.",

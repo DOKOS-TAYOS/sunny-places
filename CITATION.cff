@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+title: Sunny Places
+type: software
+authors:
+  - family-names: Mata Ali
+    given-names: Alejandro
+license: MIT
+version: 0.1.0
+repository-code: https://github.com/DOKOS-TAYOS/sunny-places
+url: https://github.com/DOKOS-TAYOS/sunny-places
+abstract: >-
+  Streamlit app to find nearby sunny places using solar geometry,
+  Open-Meteo weather data, and OpenStreetMap places.
+keywords:
+  - streamlit
+  - sunshine
+  - weather
+  - openstreetmap
+  - open-meteo

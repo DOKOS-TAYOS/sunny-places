@@ -75,11 +75,13 @@ These are operational/legal constraints that matter for a public Streamlit deplo
 
 ### Open-Meteo
 
+- Site: [open-meteo.com](https://open-meteo.com)
 - Official terms page: [open-meteo.com/en/terms](https://open-meteo.com/en/terms)
+- License for the weather data: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 - Relevant points checked on 2026-05-01:
   - the free API is described as `non-commercial use`;
   - usage limits are documented;
-  - use is tied to `CC-BY 4.0` attribution requirements.
+  - use requires `CC BY 4.0` attribution (shown in the app caption and README).
 
 Practical meaning for this repository:
 
@@ -89,11 +91,13 @@ Practical meaning for this repository:
 ### OpenStreetMap / Nominatim
 
 - Official usage policy: [operations.osmfoundation.org/policies/nominatim](https://operations.osmfoundation.org/policies/nominatim/)
+- Copyright / attribution: [openstreetmap.org/copyright](https://www.openstreetmap.org/copyright)
+- Data license: [ODbL](https://opendatacommons.org/licenses/odbl/)
 - Relevant points checked on 2026-05-01:
   - public API use must be light;
   - maximum public rate is documented as `1 request per second`;
   - a valid identifying `User-Agent` or `Referer` is required;
-  - attribution is required;
+  - attribution is required (shown in the app caption, map tiles, and README);
   - OSM data is under `ODbL`.
 
 Practical meaning:
@@ -114,10 +118,11 @@ Practical meaning:
 - Reasonable for a personal/public app with moderate traffic.
 - If traffic grows, plan to replace the public Overpass backend or precompute/cache more aggressively.
 
-### OpenStreetMap Data License
+### OpenStreetMap Data License (ODbL)
 
-- OSM data is generally provided under `ODbL`.
-- That is not a blocker for your repository being MIT, but it does mean data attribution is required and share-alike obligations can matter depending on how much data is extracted, stored, transformed, or redistributed.
+- OSM data is provided under the [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).
+- That is not a blocker for this repository remaining MIT, but attribution is required and share-alike obligations can matter depending on how much data is extracted, stored, transformed, or redistributed.
+- This app queries OSM services at runtime and does not redistribute an OSM database dump; keep the visible ODbL/OSM attribution in the UI and docs.
 
 ### CARTO Basemap Tiles
 
