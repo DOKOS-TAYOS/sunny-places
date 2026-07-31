@@ -2,9 +2,8 @@ name: CI
 
 on:
   pull_request:
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
+    branches:
+      - main
   push:
     branches:
       - main
@@ -80,3 +79,19 @@ jobs:
 
       - name: Audit pinned runtime dependencies
         run: python -m pip_audit -r requirements.txt --strict
+
+  required-pr-ci:
+    name: required-pr-ci
+    if: always()
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify essential jobs
+        env:
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          if [ "$TEST_RESULT" != "success" ]; then
+            echo "Essential CI did not succeed: $TEST_RESULT"
+            exit 1
+          fi
