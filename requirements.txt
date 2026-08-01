@@ -2,5 +2,5 @@ certifi==2026.7.22
 folium==0.20.0
 pandas==3.0.4
 requests==2.34.2
-streamlit==1.59.2
+streamlit==1.60.0
 streamlit-folium==0.27.2
