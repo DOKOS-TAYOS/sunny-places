@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **Frozen / unmaintained repository.**
+> This project is no longer maintained and is kept online only for its existing Streamlit deployment.
+
 # Sunny Places
 
 Sunny Places is a bilingual `Streamlit` app that helps people find nearby sunny spots where they can relax. It starts centered on Bilbao, lets you search anywhere in the world, and combines solar geometry, Open-Meteo weather data, and local terrain to estimate how pleasant the sun should feel around you.
