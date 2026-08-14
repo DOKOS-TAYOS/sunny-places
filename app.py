@@ -157,7 +157,6 @@ def render_sidebar() -> tuple[str, date, time, float, bool, bool, bool]:
             translate("radius_label"),
             min_value=100,
             max_value=5000,
-            value=int(st.session_state["pending_radius_m"]),
             step=20,
             key="pending_radius_m",
         )
